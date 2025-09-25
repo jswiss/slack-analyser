@@ -1,0 +1,21 @@
+[
+  {
+    "type": "message",
+    "user": "U03",
+    "text": "New topic",
+    "ts": "1695254400.000100"
+  },
+  {
+    "type": "message",
+    "user": "U03",
+    "text": "follow up",
+    "ts": "1695254460.000200",
+    "thread_ts": "1695254400.000100"
+  },
+  {
+    "type": "message",
+    "user": "U02",
+    "text": "A very long message indeed that should be considered the longest in this small dataset",
+    "ts": "1695254520.000300"
+  }
+]

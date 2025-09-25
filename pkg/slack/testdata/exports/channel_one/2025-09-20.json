@@ -1,0 +1,22 @@
+[
+  {
+    "type": "message",
+    "user": "U01",
+    "text": "Kickoff thread",
+    "ts": "1695168000.000100"
+  },
+  {
+    "type": "message",
+    "user": "U02",
+    "text": "reply A",
+    "ts": "1695168060.000200",
+    "thread_ts": "1695168000.000100"
+  },
+  {
+    "type": "message",
+    "user": "U01",
+    "text": "reply B",
+    "ts": "1695168120.000300",
+    "thread_ts": "1695168000.000100"
+  }
+]

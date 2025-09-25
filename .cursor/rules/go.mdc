@@ -1,0 +1,370 @@
+---
+description: Comprehensive best practices for Go projects
+globs:
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Comprehensive Go Best Practices
+
+## Project Structure
+
+The project follows standard Go project layout:
+
+```
+.
+├── cmd/                    # Main applications
+│   └── cursor-rules/      # Main application entry point
+├── internal/              # Private application and library code
+│   ├── api/              # API handlers and middleware
+│   ├── config/           # Configuration management
+│   └── utils/            # Internal utilities
+├── pkg/                  # Public library code
+│   ├── analyzer/         # Code analysis tools
+│   ├── generator/        # Rule generation logic
+│   └── validator/        # Rule validation
+├── test/                 # Additional test data and test utilities
+└── docs/                 # Documentation
+```
+
+## File Naming Conventions
+
+1. Use snake_case for file names:
+```golang
+// Good
+api_handler.go
+user_service.go
+
+// Bad
+apiHandler.go
+UserService.go
+```
+
+2. Test files should be named with _test suffix:
+```golang
+// Good
+api_handler_test.go
+
+// Bad
+api_handler_tests.go
+```
+
+3. Package names should be short and clear:
+```golang
+// Good
+package api
+package validator
+
+// Bad
+package apihandlers
+package utility_functions
+```
+
+## Code Organization
+
+1. Group related files in packages
+2. Keep packages focused and cohesive
+3. Follow standard Go project layout
+4. Use internal/ for private implementation
+5. Place reusable code in pkg/
+
+## Implementation Examples
+
+## Formatting and Linting
+- Enforce formatting with `go fmt`.
+- Use linters like `golangci-lint` to catch common issues.
+
+## Error Handling
+
+1. Custom error types for specific errors:
+```golang
+// Good
+type ValidationError struct {
+    Field string
+    Error string
+}
+
+func (v *ValidationError) Error() string {
+    return fmt.Sprintf("validation failed on %s: %s", v.Field, v.Error)
+}
+
+// Usage
+if !isValid {
+    return &ValidationError{
+        Field: "email",
+        Error: "invalid format",
+    }
+}
+```
+
+2. Error wrapping for context:
+```golang
+// Good
+if err := db.QueryRow(query, id).Scan(&user); err != nil {
+    return fmt.Errorf("fetching user %d: %w", id, err)
+}
+
+// Bad
+if err := db.QueryRow(query, id).Scan(&user); err != nil {
+    return err // Lost context
+}
+```
+
+## Error Handling Patterns
+
+1. Handle errors immediately:
+```golang
+// Good
+result, err := someFunction()
+if err != nil {
+    return fmt.Errorf("failed to execute someFunction: %w", err)
+}
+// Use result
+
+// Bad
+result, err := someFunction()
+// Do other things...
+if err != nil { // Too late
+    return err
+}
+```
+
+2. Don't panic in libraries:
+```golang
+// Good
+func ProcessData(data []byte) error {
+    if len(data) == 0 {
+        return errors.New("empty data provided")
+    }
+    // Process data
+}
+
+// Bad
+func ProcessData(data []byte) {
+    if len(data) == 0 {
+        panic("empty data provided")
+    }
+    // Process data
+}
+```
+
+## Error Checking
+
+1. Use `errcheck` tool:
+```golang
+// Must check errors
+file, err := os.Open("file.txt")
+if err != nil {
+    return fmt.Errorf("opening file: %w", err)
+}
+defer file.Close()
+```
+
+2. Use `staticcheck` for static analysis:
+```golang
+
+## Concurrency
+- Utilize goroutines for parallelism.
+- Synchronize access to shared resources using channels or mutexes.
+
+## Dependency Management
+- Manage dependencies with Go modules (`go.mod` and `go.sum`).
+- Keep dependencies up to date and tidy with `go mod tidy`.
+
+## Testing
+1. Use table-driven tests:
+```golang
+func TestCalculate(t *testing.T) {
+    tests := []struct {
+        name     string
+        input    int
+        want     int
+        wantErr  bool
+    }{
+        {
+            name:    "positive number",
+            input:   5,
+            want:    10,
+            wantErr: false,
+        },
+        {
+            name:    "negative number",
+            input:   -5,
+            wantErr: true,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            got, err := Calculate(tt.input)
+            if (err != nil) != tt.wantErr {
+                t.Errorf("Calculate() error = %v, wantErr %v", err, tt.wantErr)
+                return
+            }
+            if !tt.wantErr && got != tt.want {
+                t.Errorf("Calculate() = %v, want %v", got, tt.want)
+            }
+        })
+    }
+}
+```
+
+2. Use subtests for better organization:
+```golang
+func TestService(t *testing.T) {
+    t.Run("Create", func(t *testing.T) {
+        // Test creation
+    })
+
+    t.Run("Update", func(t *testing.T) {
+        // Test update
+    })
+
+    t.Run("Delete", func(t *testing.T) {
+        // Test deletion
+    })
+}
+```
+
+## Test Helpers
+
+1. Create test utilities:
+```golang
+// Good
+func setupTestDB(t *testing.T) (*sql.DB, func()) {
+    t.Helper() // Mark as helper function
+    db, err := sql.Open("postgres", "test-connection-string")
+    if err != nil {
+        t.Fatalf("setting up test db: %v", err)
+    }
+    
+    return db, func() {
+        db.Close()
+    }
+}
+
+// Usage
+func TestDatabase(t *testing.T) {
+    db, cleanup := setupTestDB(t)
+    defer cleanup()
+    // Run tests
+}
+```
+
+## Mocking
+
+1. Use interfaces for testability:
+```golang
+// Good
+type UserRepository interface {
+    GetUser(id int) (*User, error)
+}
+
+// Mock implementation
+type mockUserRepo struct {
+    users map[int]*User
+}
+
+func (m *mockUserRepo) GetUser(id int) (*User, error) {
+    user, ok := m.users[id]
+    if !ok {
+        return nil, ErrNotFound
+    }
+    return user, nil
+}
+```
+
+## Test Coverage
+
+1. Run tests with coverage:
+```bash
+go test -cover ./...
+```
+
+2. Generate coverage report:
+```bash
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+```
+
+## Best Practices
+
+1. Test files should be in the same package:
+```golang
+// user.go
+package user
+
+// user_test.go
+package user_test // Use _test suffix for external test package
+```
+
+2. Use parallel tests when possible:
+```golang
+func TestParallel(t *testing.T) {
+    tests := []struct{
+        name string
+        // test cases
+    }{
+        // test cases here
+    }
+    
+    for _, tt := range tests {
+        tt := tt // Capture range variable
+        t.Run(tt.name, func(t *testing.T) {
+            t.Parallel() // Mark test as parallel
+            // Test implementation
+        })
+    }
+}
+```
+
+3. Use test fixtures:
+```golang
+// testdata/users.json
+// Place test data in testdata directory
+```
+
+4. Test race conditions:
+```bash
+go test -race ./...
+```
+
+## Integration Tests
+
+1. Use build tags:
+```golang
+// +build integration
+
+package integration
+
+func TestIntegration(t *testing.T) {
+    // Integration test implementation
+}
+```
+
+2. Separate integration test configuration:
+```golang
+// test_config.go
+package config
+
+var TestConfig = Config{
+    DBHost: "localhost",
+    DBPort: 5432,
+}
+```
+
+## Documentation
+- Document packages and exported functions with comments.
+- Use `godoc` to generate and view documentation.
+
+## Logging
+- Use the standard `log` package for logging.
+- Include timestamps and contextual information in logs.
+
+## Security
+- Validate all inputs to prevent injection attacks.
+- Avoid using deprecated or insecure packages.
+
+## Performance
+- Profile applications using `pprof` to identify bottlenecks.
+- Optimize critical code paths for performance.:contentReference[oaicite:8]{index=8}
